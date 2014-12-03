@@ -841,11 +841,14 @@ class EmbeddedDocumentFormSet(BaseDocumentFormSet):
                  prefix=None, queryset=[], parent_document=None, **kwargs):
         if parent_document is not None:
             self.parent_document = parent_document
-            
         if 'instance' in kwargs:
             instance = kwargs.pop('instance')
             if parent_document is None:
                 self.parent_document = instance
+
+        for k,v in self.parent_document._fields.iteritems():
+            if type(v) == EmbeddedDocumentField and self.parent_document[k] == None:
+                self.parent_document[k] = v.to_python({})
         
         queryset = getattr(self.parent_document,
                            self.form._meta.embedded_field)
