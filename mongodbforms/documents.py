@@ -584,16 +584,17 @@ def documentform_factory(document, form=DocumentForm, fields=None,
 
 class EmbeddedDocumentForm(with_metaclass(DocumentFormMetaclass,
                                           BaseDocumentForm)):
-    def __init__(self, parent_document, data=None, files=None, position=None,
+    def __init__(self, parent_document=None, data=None, files=None, position=None,
                  *args, **kwargs):
-        if self._meta.embedded_field is not None and not \
-                self._meta.embedded_field in parent_document._fields:
+        if self._meta.embedded_field is not None and parent_document is not None \
+                and not self._meta.embedded_field in parent_document._fields:
             raise FieldError("Parent document must have field %s" %
                              self._meta.embedded_field)
         
         instance = kwargs.pop('instance', None)
         
-        if isinstance(parent_document._fields.get(self._meta.embedded_field),
+        if parent_document is not None and \
+                isinstance(parent_document._fields.get(self._meta.embedded_field),
                       ListField):
             # if we received a list position of the instance and no instance
             # load the instance from the parent document and proceed as normal
@@ -674,6 +675,7 @@ class BaseDocumentFormSet(BaseFormSet):
         defaults = {'data': data, 'files': files, 'auto_id': auto_id,
                     'prefix': prefix, 'initial': self.initial}
         defaults.update(kwargs)
+
         super(BaseDocumentFormSet, self).__init__(**defaults)
 
     def construct_initial(self):
@@ -687,6 +689,7 @@ class BaseDocumentFormSet(BaseFormSet):
 
     def initial_form_count(self):
         """Returns the number of forms that are required in this FormSet."""
+
         if not (self.data or self.files):
             return len(self.get_queryset())
         return super(BaseDocumentFormSet, self).initial_form_count()
@@ -841,18 +844,18 @@ class EmbeddedDocumentFormSet(BaseDocumentFormSet):
                  prefix=None, queryset=[], parent_document=None, **kwargs):
         if parent_document is not None:
             self.parent_document = parent_document
+            
         if 'instance' in kwargs:
             instance = kwargs.pop('instance')
             if parent_document is None:
                 self.parent_document = instance
+        else:
+            self.is_bound = False
+            self.parent_document = None
 
-        for k,v in self.parent_document._fields.iteritems():
-            if type(v) == EmbeddedDocumentField and self.parent_document[k] == None:
-                self.parent_document[k] = v.to_python({})
-        
         queryset = getattr(self.parent_document,
-                           self.form._meta.embedded_field)
-        
+                           self.form._meta.embedded_field, [])
+
         super(EmbeddedDocumentFormSet, self).__init__(data, files, save_as_new,
                                                       prefix, queryset,
                                                       **kwargs)
@@ -863,8 +866,8 @@ class EmbeddedDocumentFormSet(BaseDocumentFormSet):
         # add position argument to the form. Otherwise we will spend
         # a huge amount of time iterating over the list field on form __init__
         emb_list = getattr(self.parent_document,
-                           self.form._meta.embedded_field)
-                           
+                           self.form._meta.embedded_field, None)
+        
         if emb_list is not None and len(emb_list) > i:
             defaults['position'] = i
         defaults.update(kwargs)
