@@ -129,6 +129,7 @@ class DocumentMetaWrapper(MutableMapping):
     pk = None
     pk_name = None
     _app_label = None
+    _app_config = None
     model_name = None
     _verbose_name = None
     has_auto_field = False
@@ -238,6 +239,14 @@ class DocumentMetaWrapper(MutableMapping):
             # TODO: test it.
             self._app_label = model_module.__name__.split('.')[0]
         return self._app_label
+
+    @property
+    def app_config(self):
+        if self._app_config is None:
+            from django.apps import apps
+            self._app_config = apps.get_app_config(self.app_label)
+            # self._meta['app_config'] = self._app_config
+        return self._app_config
             
     @property
     def verbose_name(self):
