@@ -5,12 +5,12 @@ from functools import reduce
 
 # TODO: probably will be needed change BaseForm to BaseModelForm
 from django.forms import BaseModelForm
-from django.forms.forms import (BaseForm, get_declared_fields,
+from django.forms.forms import (BaseForm,
                                 NON_FIELD_ERRORS, pretty_name)
 from django.forms.widgets import media_property
 from django.core.exceptions import FieldError
 from django.core.validators import EMPTY_VALUES
-from django.forms.util import ErrorList
+from django.forms.utils import ErrorList
 from django.forms.formsets import BaseFormSet, formset_factory
 from django.utils.translation import ugettext_lazy as _, ugettext
 from django.utils.text import capfirst, get_valid_filename
@@ -301,7 +301,6 @@ class DocumentFormMetaclass(type):
         except NameError:
             # We are defining DocumentForm itself.
             parents = None
-        declared_fields = get_declared_fields(bases, attrs, False)
         new_class = super(DocumentFormMetaclass, cls).__new__(cls, name,
                                                               bases, attrs)
         if not parents:
@@ -326,7 +325,7 @@ class DocumentFormMetaclass(type):
             # make sure opts.fields doesn't specify an invalid field
             none_document_fields = [k for k, v in fields.items() if not v]
             missing_fields = (set(none_document_fields) -
-                              set(declared_fields.keys()))
+                              set(new_class.declared_fields.keys()))
             if missing_fields:
                 message = 'Unknown field(s) (%s) specified for %s'
                 message = message % (', '.join(missing_fields),
@@ -334,15 +333,14 @@ class DocumentFormMetaclass(type):
                 raise FieldError(message)
             # Override default model fields with any custom declared ones
             # (plus, include all the other declared fields).
-            fields.update(declared_fields)
+            fields.update(new_class.declared_fields)
         else:
-            fields = declared_fields
-            
-        new_class.declared_fields = declared_fields
+            fields = new_class.declared_fields
+
         new_class.base_fields = fields
         return new_class
-    
-    
+
+
 class BaseDocumentForm(BaseForm):
     def __init__(self, data=None, files=None, auto_id='id_%s', prefix=None,
                  initial=None, error_class=ErrorList, label_suffix=':',

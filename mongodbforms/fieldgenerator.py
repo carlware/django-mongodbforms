@@ -123,14 +123,14 @@ class MongoFormFieldGenerator(object):
         return value.lower() == 'true'
 
     def get_field_label(self, field):
-        if field.verbose_name:
+        if hasattr(field, 'verbose_name'):
             return capfirst(field.verbose_name)
         if field.name is not None:
             return capfirst(create_verbose_name(field.name))
         return ''
 
     def get_field_help_text(self, field):
-        if field.help_text:
+        if hasattr(field, 'help_text'):
             return field.help_text
         else:
             return ''
