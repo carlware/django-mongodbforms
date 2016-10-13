@@ -112,6 +112,7 @@ class DocumentMetaWrapper(MutableMapping):
     proxied_children = []
     parents = {}
     many_to_many = []
+    private_fields = []
     _field_cache = None
     document = None
     _meta = None
@@ -338,6 +339,7 @@ class DocumentMetaWrapper(MutableMapping):
     def __getattr__(self, name):
         if name in self._deprecated_attrs:
             return getattr(self, self._deprecated_attrs.get(name))
+        
         try:
             return self._meta[name]
         except KeyError:
