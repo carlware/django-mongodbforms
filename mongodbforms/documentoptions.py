@@ -5,6 +5,7 @@ from types import MethodType
 from django.db.models.fields import FieldDoesNotExist
 from django.utils.text import capfirst
 from django.utils.functional import LazyObject, new_method_proxy
+from django.apps import apps
 try:
     # New in Django 1.7+
     from django.utils.text import camel_case_to_spaces
@@ -30,7 +31,7 @@ def create_verbose_name(name):
 
 
 class Relation(object):
-    # just an empty dict to make it useable with Django
+    # just an empty dict to make it usable with Django
     # mongoengine has no notion of this
     limit_choices_to = {}
 
@@ -102,6 +103,7 @@ class DocumentMetaWrapper(MutableMapping):
     pk = None
     pk_name = None
     _app_label = None
+    _app_config = None
     model_name = None
     _verbose_name = None
     has_auto_field = False
@@ -127,13 +129,12 @@ class DocumentMetaWrapper(MutableMapping):
         self.concrete_model = document
         if meta is None:
             meta = getattr(document, '_meta', {})
-            if not 'app_label' in meta:
+            if 'app_label' not in meta:
                 meta['app_label'] = document.__module__.split('.')[0]
-            if not 'app_config' in meta:
-                # TODO: this needs improvements
-                meta['app_config'] = dict()
-            if not 'verbose_name' in meta:
-                meta['app_config']['verbose_name'] = meta['app_label'].replace('_', ' ').capitalize()
+            if 'app_config' not in meta:
+                meta['app_config'] = apps.get_app_config(meta['app_label'])
+            if 'model' not in meta:
+                meta['model'] = self.document
             if isinstance(meta, LazyDocumentMetaWrapper):
                 meta = meta._meta
         self._meta = meta
@@ -236,6 +237,12 @@ class DocumentMetaWrapper(MutableMapping):
         return self._app_label
 
     @property
+    def app_config(self):
+        if self._app_config is None:
+            self._app_config = self._meta['app_config']
+        return self._app_config
+
+    @property
     def verbose_name(self):
         """
         Returns the verbose name of the document.
@@ -331,11 +338,10 @@ class DocumentMetaWrapper(MutableMapping):
     def __getattr__(self, name):
         if name in self._deprecated_attrs:
             return getattr(self, self._deprecated_attrs.get(name))
-
         try:
             return self._meta[name]
         except KeyError:
-            raise AttributeError
+            raise AttributeError('Meta does not have attribute %s', name)
 
     def __setattr__(self, name, value):
         if not hasattr(self, name):
