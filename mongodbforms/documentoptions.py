@@ -130,16 +130,16 @@ class DocumentMetaWrapper(MutableMapping):
         self.concrete_model = document
         if meta is None:
             meta = getattr(document, '_meta', {})
-            if 'app_label' not in meta:
-                meta['app_label'] = document.__module__.split('.')[0]
-            if 'app_config' not in meta:
-                meta['app_config'] = apps.get_app_config(meta['app_label'])
-            if 'model' not in meta:
-                meta['model'] = self.document
             if isinstance(meta, LazyDocumentMetaWrapper):
                 meta = meta._meta
-        self._meta = meta
 
+        if 'app_label' not in meta:
+            meta['app_label'] = document.__module__.split('.')[0]
+        if 'app_config' not in meta:
+            meta['app_config'] = apps.get_app_config(meta['app_label'])
+        if 'model' not in meta:
+            meta['model'] = self.document
+        self._meta = meta
 
         try:
             self.object_name = self.document.__name__

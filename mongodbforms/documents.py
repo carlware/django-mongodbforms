@@ -341,10 +341,12 @@ class DocumentFormMetaclass(DeclarativeFieldsMetaclass):
 
 
 class BaseDocumentForm(BaseForm):
+    # TODO: this is needed for django 1.10, check !
+    use_required_attribute = True
 
     def __init__(self, data=None, files=None, auto_id='id_%s', prefix=None,
                  initial=None, error_class=ErrorList, label_suffix=':',
-                 empty_permitted=False, instance=None):
+                 empty_permitted=False, instance=None, use_required_attribute=None):
 
         opts = self._meta
 
@@ -669,6 +671,10 @@ class BaseDocumentFormSet(BaseFormSet):
         if not isinstance(queryset, (list, BaseQuerySet)):
             queryset = [queryset]
         self.queryset = queryset
+        # for django 1.10
+        self.new_objects = []
+        self.changed_objects = []
+        self.deleted_objects = []
         self.initial = self.construct_initial()
         defaults = {'data': data, 'files': files, 'auto_id': auto_id,
                     'prefix': prefix, 'initial': self.initial}
@@ -719,6 +725,48 @@ class BaseDocumentFormSet(BaseFormSet):
                 obj.save()
             saved.append(obj)
         return saved
+
+    def save_new_objects(self, commit=True):
+        # for django 1.10
+        self.new_objects = []
+        for form in self.extra_forms:
+            if not form.has_changed():
+                continue
+            # If someone has marked an add form for deletion, don't save the
+            # object.
+            if self.can_delete and self._should_delete_form(form):
+                continue
+            self.new_objects.append(self.save_new(form, commit=commit))
+            if not commit:
+                self.saved_forms.append(form)
+        return self.new_objects
+
+    def save_existing_objects(self, commit=True):
+        # for django 1.10
+        self.changed_objects = []
+        self.deleted_objects = []
+        if not self.initial_forms:
+            return []
+
+        saved_instances = []
+        forms_to_delete = self.deleted_forms
+        for form in self.initial_forms:
+            obj = form.instance
+            if form in forms_to_delete:
+                # If the pk is None, it means that the object can't be
+                # deleted again. Possible reason for this is that the
+                # object was already deleted from the DB. Refs #14877.
+                if obj.pk is None:
+                    continue
+                self.deleted_objects.append(obj)
+                if commit:
+                    obj.delete()
+            elif form.has_changed():
+                self.changed_objects.append((obj, form.changed_data))
+                saved_instances.append(self.save_existing(form, obj, commit=commit))
+                if not commit:
+                    self.saved_forms.append(form)
+        return saved_instances
 
     def clean(self):
         self.validate_unique()
@@ -938,11 +986,11 @@ def _get_embedded_field(parent_doc, document, emb_name=None, can_fail=False):
     else:
         emb_fields = [
             f for f in parent_doc._fields.values()
-            if (isinstance(field, EmbeddedDocumentField) and
-                field.document_type == document) or
-               (isinstance(field, ListField) and
-                isinstance(field.field, EmbeddedDocumentField) and
-                field.field.document_type == document)
+            if (isinstance(f, EmbeddedDocumentField) and
+                f.document_type == document) or
+               (isinstance(f, ListField) and
+                isinstance(f.field, EmbeddedDocumentField) and
+                f.field.document_type == document)
         ]
         if len(emb_fields) == 1:
             field = emb_fields[0]
@@ -955,6 +1003,7 @@ def _get_embedded_field(parent_doc, document, emb_name=None, can_fail=False):
             raise Exception(
                 "%s has more than 1 EmbeddedDocumentField to %s" % (parent_doc, document))
 
+    # FIXME: this might be referenced before assignment
     return field
 
 
