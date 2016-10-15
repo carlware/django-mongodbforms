@@ -289,9 +289,9 @@ class DocumentMetaWrapper(MutableMapping):
         if name in self.document._fields:
             field = self.document._fields[name]
             if isinstance(field, ReferenceField):
-                return (field, field.document_type, False, False)
+                return field, field.document_type, False, False
             else:
-                return (field, None, True, False)
+                return field, None, True, False
         else:
             raise FieldDoesNotExist('%s has no field named %r' %
                                     (self.object_name, name))

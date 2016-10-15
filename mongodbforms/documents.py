@@ -449,6 +449,7 @@ class BaseDocumentForm(BaseForm):
                     setattr(self.instance, f.name, None)
                     # opts._dont_save.append(f.name)
         except ValidationError as e:
+            # FIXME: f might be referenced before assignment
             err = {f.name: [e.message]}
             self._update_errors(err)
 

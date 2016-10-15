@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.conf import settings
+import mongoengine
+from django.test import SimpleTestCase
+from mongodbforms.documentoptions import LazyDocumentMetaWrapper
 
 settings.configure(
     DEBUG=True,
@@ -19,14 +22,8 @@ settings.configure(
 )
 
 
-import mongoengine
-from django.test import SimpleTestCase
-from mongodbforms.documentoptions import LazyDocumentMetaWrapper
-
-
 class TestDocument(mongoengine.Document):
     meta = {'abstract': True}
-
     name = mongoengine.StringField()
 
 

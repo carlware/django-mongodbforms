@@ -429,6 +429,7 @@ class MongoDefaultFormFieldGenerator(MongoFormFieldGenerator):
 
 
 class Html5FormFieldGenerator(MongoDefaultFormFieldGenerator):
+
     def check_widget(self, map_key):
         override = super(Html5FormFieldGenerator, self).check_widget(map_key)
         if override != {}:
@@ -441,23 +442,23 @@ class Html5FormFieldGenerator(MongoDefaultFormFieldGenerator):
             if hasattr(forms, 'EmailInput'):
                 return {'widget': forms.EmailInput}
             else:
-                input = forms.TextInput
-                input.input_type = 'email'
-                return {'widget': input}
+                text_input = forms.TextInput
+                text_input.input_type = 'email'
+                return {'widget': text_input}
         elif kind in ['int', 'float'] and len(chunks) < 2:
             if hasattr(forms, 'NumberInput'):
                 return {'widget': forms.NumberInput}
             else:
-                input = forms.TextInput
-                input.input_type = 'number'
-                return {'widget': input}
+                text_input = forms.TextInput
+                text_input.input_type = 'number'
+                return {'widget': text_input}
         elif kind == 'url':
             if hasattr(forms, 'URLInput'):
                 return {'widget': forms.URLInput}
             else:
-                input = forms.TextInput
-                input.input_type = 'url'
-                return {'widget': input}
+                text_input = forms.TextInput
+                text_input.input_type = 'url'
+                return {'widget': text_input}
         elif kind == 'datetime':
             return {'widget': Html5SplitDateTimeWidget}
         else:
