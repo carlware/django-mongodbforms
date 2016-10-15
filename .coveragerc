@@ -1,0 +1,8 @@
+[run]
+branch = False
+data_file = ./.coverage
+omit =
+	mongodbforms/tests*
+	*__init__*
+include =
+	mongodbforms*

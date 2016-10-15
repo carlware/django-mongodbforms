@@ -1,29 +1,15 @@
 # -*- coding: utf-8 -*-
-from django.conf import settings
 import mongoengine
 from django.test import SimpleTestCase
 from mongodbforms.documentoptions import LazyDocumentMetaWrapper
 
-settings.configure(
-    DEBUG=True,
-    DATABASES={
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-        }
-    },
-    ROOT_URLCONF='',
-    INSTALLED_APPS=(
-        'django.contrib.auth',
-        'django.contrib.contenttypes',
-        'django.contrib.sessions',
-        'django.contrib.admin',
-        'mongodbforms',
-    )
-)
-
 
 class TestDocument(mongoengine.Document):
-    meta = {'abstract': True}
+
+    meta = {
+        'abstract': True
+    }
+
     name = mongoengine.StringField()
 
 

@@ -133,12 +133,6 @@ class DocumentMetaWrapper(MutableMapping):
             if isinstance(meta, LazyDocumentMetaWrapper):
                 meta = meta._meta
 
-        if 'app_label' not in meta:
-            meta['app_label'] = document.__module__.split('.')[0]
-        if 'app_config' not in meta:
-            meta['app_config'] = apps.get_app_config(meta['app_label'])
-        if 'model' not in meta:
-            meta['model'] = self.document
         self._meta = meta
 
         try:
@@ -233,15 +227,18 @@ class DocumentMetaWrapper(MutableMapping):
             if self._meta.get('app_label'):
                 self._app_label = self._meta["app_label"]
             else:
-                model_module = sys.modules[self.document.__module__]
-                self._app_label = model_module.__name__.split('.')[-2]
+                self._app_label = self.document.__module__.split('.')[0]
         return self._app_label
 
     @property
     def app_config(self):
         if self._app_config is None:
-            self._app_config = self._meta['app_config']
+            self._app_config = apps.get_app_config(self._app_label)
         return self._app_config
+
+    @property
+    def model(self):
+        return self.document
 
     @property
     def verbose_name(self):
