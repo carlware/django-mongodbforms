@@ -267,6 +267,9 @@ class ListField(forms.Field):
             if self.contained_field._has_changed(initial, data):
                 return True
         return False
+
+    def has_changed(self, initial, data):
+        return self._has_changed(initial, data)
         
     def prepare_value(self, value):
         value = [] if value is None else value
@@ -398,3 +401,6 @@ class MapField(forms.Field):
             if self.contained_field._has_changed(init_val, v):
                 return True
         return False
+
+    def has_changed(self, initial, data):
+        return self._has_changed(initial, data)
