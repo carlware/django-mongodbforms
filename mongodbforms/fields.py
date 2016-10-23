@@ -264,7 +264,9 @@ class ListField(forms.Field):
             initial = ['' for x in range(0, len(data))]
         
         for initial, data in zip(initial, data):
-            if self.contained_field._has_changed(initial, data):
+            # In Django 1.10 _has_changed has been deprecated
+            if (hasattr(self.contained_field, 'has_changed') and self.contained_field.has_changed(initial, data)) or \
+               (hasattr(self.contained_field, '_has_changed') and self.contained_field._has_changed(initial, data)):
                 return True
         return False
 
@@ -398,7 +400,9 @@ class MapField(forms.Field):
                     init_val = initial[k]
                 except KeyError:
                     return True
-            if self.contained_field._has_changed(init_val, v):
+            # In Django 1.10 _has_changed has been deprecated
+            if (hasattr(self.contained_field, '_has_changed') and self.contained_field._has_changed(init_val, v)) or \
+               (hasattr(self.contained_field, 'has_changed') and self.contained_field.has_changed(init_val, v)):
                 return True
         return False
 
